@@ -1,0 +1,13 @@
+{
+    "files.autoSave": "onFocusChange",
+    "editor.minimap.enabled": false,
+    "editor.tabSize": 4,
+    "editor.detectIndentation": false,
+    "editor.insertSpaces": true,
+    "editor.renderControlCharacters": true,
+    "vetur.validation.template": false,
+	"window.zoomLevel": 0,
+	"javascript.format.enable": false,
+	"http.proxyAuthorization": "Basic RjEzMzE4NjU6Rm94Y29ubjE2OCEh",
+	"http.proxy": "http://F1331865:Foxconn168!!@10.191.131.156:3128",
+}

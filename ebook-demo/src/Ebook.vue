@@ -14,6 +14,16 @@
         <menu-bar
             ref="menuBar"
             :ifTitleAndMenuShow="ifTitleAndMenuShow"
+            :fontSizeList="fontSizeList"
+            :defaultFontSize="defaultFontSize"
+            @setFontSize="setFontSize"
+            :themeList="themeList"
+            :defaultTheme="defaultTheme"
+            @setTheme="setTheme"
+            :bookAvailable="bookAvailable"
+            @onProgressChange="onProgressChange"
+            :navigation="navigation"
+            @jumpTo="jumpTo"
         ></menu-bar>
     </div>
 </template>
@@ -21,6 +31,7 @@
 import Epub from 'epubjs'
 import TitleBar from '@/components/TitleBar.vue'
 import MenuBar from '@/components/MenuBar.vue'
+// const DOWNLOAD_URL = '/static/大主宰.epub'
 const DOWNLOAD_URL = '/static/2018_Book_AgileProcessesInSoftwareEngine.epub'
 global.ePub = Epub
 /* eslint-disable space-before-function-paren */
@@ -30,10 +41,96 @@ export default {
     },
     data() {
         return {
-            ifTitleAndMenuShow: false
+            ifTitleAndMenuShow: false,
+            fontSizeList: [
+                { fontSize: 12 },
+                { fontSize: 14 },
+                { fontSize: 16 },
+                { fontSize: 18 },
+                { fontSize: 20 },
+                { fontSize: 22 },
+                { fontSize: 24 }
+            ],
+            defaultFontSize: 16,
+            themeList: [
+                {
+                    name: 'default',
+                    style: {
+                        body: {
+                            'color': '#000',
+                            'background': '#FFF'
+                        }
+                    }
+                },
+                {
+                    name: 'eye',
+                    style: {
+                        body: {
+                            'color': '#000',
+                            'background': '#CEEABA'
+                        }
+                    }
+                },
+                {
+                    name: 'night',
+                    style: {
+                        body: {
+                            'color': '#FFF',
+                            'background': '#000'
+                        }
+                    }
+                },
+                {
+                    name: 'gold',
+                    style: {
+                        body: {
+                            'color': '#000',
+                            'background': 'rgb(241, 236, 226)'
+                        }
+                    }
+                }
+            ],
+            defaultTheme: 0,
+            // 图书是否处于可用状态
+            bookAvailable: false,
+            navigation: null
         }
     },
     methods: {
+        // 根据连接跳转到指定位置
+        jumpTo(href) {
+            this.rendition.display(href)
+            this.hideTitleAndMenu()
+        },
+        hideTitleAndMenu() {
+            // 隐藏标题栏和菜单栏
+            this.ifTitleAndMenuShow = false
+            // 隐藏菜单栏弹出的设置栏
+            this.$refs.menuBar.hideSetting()
+            // 隐藏目录
+            this.$refs.menuBar.hideContent()
+        },
+        // progress 进度条的数值 (0-100)
+        onProgressChange(progress) {
+            const percentage = progress / 100
+            const location = percentage > 0 ? this.locations.cfiFromPercentage(percentage) : 0
+            this.rendition.display(location)
+        },
+        setTheme(index) {
+            this.themes.select(this.themeList[index].name)
+            this.defaultTheme = index
+        },
+        registerTheme() {
+            this.themeList.forEach(theme => {
+                this.themes.register(theme.name, theme.style)
+            })
+        },
+        setFontSize(fontSize) {
+            this.defaultFontSize = fontSize
+            if (this.themes) {
+                this.themes.fontSize(fontSize + 'px')
+            }
+        },
         toggleTitleAndMenu() {
             this.ifTitleAndMenuShow = !this.ifTitleAndMenuShow
             if (!this.ifTitleAndMenuShow) {
@@ -64,6 +161,23 @@ export default {
             })
             // 通过Rendition.display 渲染电子书
             this.rendition.display()
+            // 获取Theme对象
+            this.themes = this.rendition.themes
+            // 设置默认字体
+            this.setFontSize(this.defaultFontSize)
+            // this.themes.register(name, styles)
+            // this.themes.select(name)
+            this.registerTheme()
+            this.setTheme(this.defaultTheme)
+            // 获取location对象
+            // 通过epubjs的钩子函数来实现
+            this.book.ready.then(() => {
+                this.navigation = this.book.navigation
+                return this.book.locations.generate()
+            }).then(result => {
+                this.locations = this.book.locations
+                this.bookAvailable = true
+            })
         }
     },
     mounted () {
